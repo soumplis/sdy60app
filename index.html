@@ -8,39 +8,88 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@latest/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-database.js"></script>
 </head>
 
 <body>
     <div id="mapid"></div>
     <script>
+  
+    // Firebase configuration
+    var firebaseConfig = {
+        apiKey: "AIzaSyARE2Z1W17Di9WJ8ZBzl-P9DzA7iiHX6TM",
+        authDomain: "sdy60app.firebaseapp.com",
+        databaseURL: "https://sdy60app.firebaseio.com",
+        projectId: "sdy60app",
+        storageBucket: "sdy60app.appspot.com",
+        messagingSenderId: "884180030758",
+        appId: "1:884180030758:web:7e0821de4db03d85fadde7"
+    };
 
-        let mymap = L.map('mapid').setView([51.505, -0.09], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
-        let marker = L.marker([51.5, -0.09]).addTo(mymap);
-        mymap.locate({setView: true, maxZoom: 16});
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
 
-        function onLocationFound(e) {
-            var radius = e.accuracy / 2;
-            L.marker(e.latlng).addTo(mymap)
-            .bindPopup("You are within " + radius + " meters from this point").openPopup();
+    // Reference to our DB
+    var clicks = firebase.database().ref('sdy60app');
 
-            L.circle(e.latlng, radius).addTo(mymap);
+    // Data object to be written to Firebase.
+    var data = {sender: null, timestamp: null, lat: null, lng: null};
+
+    // Authenticate to the DB
+    function initAuthentication(onAuthSuccess) {
+        firebase.auth().signInAnonymously().catch(function(error) {
+          console.log(error.code + ', ' + error.message);
+        }, {remember: 'sessionOnly'});
+
+        firebase.auth().onAuthStateChanged(function(user) {
+          if (user) {
+            data.sender = user.uid;
+            onAuthSuccess();
+          } else {
+            // User is signed out.
+          }
+        });
+      }
+
+    function addToFirebase(data) {
+      var ref = firebase.database().ref('clicks').push(data, function(err) {
+        if (err) {  // Data was not written to firebase.
+          console.warn(err);
         }
+      });
+    }
 
-        mymap.on('locationfound', onLocationFound);
+        
+    let mymap = L.map('mapid').setView([51.505, -0.09], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
+    let marker = L.marker([51.5, -0.09]).addTo(mymap);
+    mymap.locate({setView: true, maxZoom: 16});
 
-        marker.bindPopup("<b>I am a popup without location access!</b>").openPopup();
+    function onLocationFound(e) {
+      var radius = e.accuracy / 2;
+      L.marker(e.latlng).addTo(mymap)
+      .bindPopup("You are within " + radius + " meters from this point").openPopup();
 
-        var popup = L.popup()
-        .setLatLng([51.5, -0.09])
-        .setContent("Allow location access from your browser")
-        .openOn(mymap);
+      L.circle(e.latlng, radius).addTo(mymap);
+    }
 
-        function onMapClick(e) {
-            L.marker(e.latlng).addTo(mymap).bindPopup("My Pin").openPopup();
-        }
+    mymap.on('locationfound', onLocationFound);
+    marker.bindPopup("<b>I am a popup without location access!</b>").openPopup();
 
-        mymap.on('click', onMapClick);
+    var popup = L.popup()
+      .setLatLng([51.5, -0.09])
+      .setContent("Allow location access from your browser")
+      .openOn(mymap);
+
+
+    function onMapClick(e) {
+      L.marker(e.latlng).addTo(mymap).bindPopup("My Pin").openPopup();
+      addToFirebase(e.latlng);
+    }
+
+    mymap.on('click', onMapClick);
     </script>
 </body>
 
