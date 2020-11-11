@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>EAP SDY60 Map</title>
+    <meta name="description" content="SDY60 App">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@latest/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <div id="mapid"></div>
+    <script>
+
+        let mymap = L.map('mapid').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
+        let marker = L.marker([51.5, -0.09]).addTo(mymap);
+        mymap.locate({setView: true, maxZoom: 16});
+
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+            L.marker(e.latlng).addTo(mymap)
+            .bindPopup("You are within " + radius + " meters from this point").openPopup();
+
+            L.circle(e.latlng, radius).addTo(mymap);
+        }
+
+        mymap.on('locationfound', onLocationFound);
+
+        marker.bindPopup("<b>I am a popup without location access!</b>").openPopup();
+
+        var popup = L.popup()
+        .setLatLng([51.5, -0.09])
+        .setContent("Allow location access from your browser")
+        .openOn(mymap);
+
+        function onMapClick(e) {
+            L.marker(e.latlng).addTo(mymap).bindPopup("My Pin").openPopup();
+        }
+
+        mymap.on('click', onMapClick);
+    </script>
+</body>
+
+</html>
